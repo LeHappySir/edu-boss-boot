@@ -1,0 +1,191 @@
+server:
+  port: 8020
+
+spring:
+  application:
+    name: edu-boss-boot
+  cloud:
+    config:
+      discovery:
+        enabled: true
+        service-id: edu-config-boot
+      name: ${spring.application.name}
+      profile: dev
+    loadbalancer:
+      retry:
+        enabled: true
+  main:
+    allow-bean-definition-overriding: true
+  klock:
+    address: 127.0.0.1:6379
+  rabbitmq:
+      host: 127.0.0.1
+      port: 5672
+      username: edu
+      password: edu
+      virtual-host: /edu
+  redis:
+      host: 127.0.0.1
+      port: 6379
+      timeout: 20000
+      pool:
+        max-active: 8
+        min-idle: 0
+        max-idle: 8
+        max-wait: -1
+      password:
+  mvc:
+    throw-exception-if-no-handler-found: true
+  servlet:
+      multipart:
+        max-request-size: "10MB"
+        max-file-size: "10MB"
+  jackson:
+      time-zone: GMT+8
+
+#注册到Eureka服务中心
+eureka:
+  client:
+    service-url:
+      # 注册到集群，就把多个Eurekaserver地址使用逗号连接起来即可；注册到单实例（非集群模式），那就写一个就ok
+      defaultZone: http://127.0.0.1:9020/eureka/
+    #eureka client刷新本地缓存时间 默认30s
+    registry-fetch-interval-seconds: 5
+  instance:
+    prefer-ip-address: true  #服务实例中显示ip，而不是显示主机名（兼容老的eureka版本）
+    # 实例名称： 192.168.1.103:lagou-service-resume:8080，我们可以自定义它
+    instance-id: ${spring.cloud.client.ip-address}:${spring.application.name}:${server.port}
+    #服务过期时间配置,超过这个时间没有接收到心跳EurekaServer就会将这个实例剔除 默认90s
+    lease-expiration-duration-in-seconds: 9
+    #服务刷新时间配置，每隔这个时间会主动心跳一次 默认30s
+    lease-renewal-interval-in-seconds: 3
+
+jetcache:
+  statIntervalMinutes: 15
+  areaInCacheName: false
+  hidePackages: com.lagou.edu
+  local:
+    # 默认2小时本地缓存
+    default:
+      type: caffeine
+      keyConvertor: fastjson
+      expireAfterWriteInMillis: 3600000
+      expireAfterAccessInMillis: 1800000
+    # 長時本地緩存，主要用于要求时效一般
+    longTime:
+      type: caffeine
+      keyConvertor: fastjson
+      expireAfterWriteInMillis: 300000
+      expireAfterAccessInMillis: 180000
+    # 短時本地緩存，主要用于要求时效较高的配置
+    shortTime:
+      type: caffeine
+      keyConvertor: fastjson
+      expireAfterWriteInMillis: 60000
+      expireAfterAccessInMillis: 40000
+  remote:
+    # 默认2小时的远程缓存
+    default:
+      type: redis
+      expireAfterWriteInMillis: 43200000
+      keyConvertor: fastjson
+      valueEncoder: kryo
+      valueDecoder: kryo
+      poolConfig:
+        minIdle: 5
+        maxIdle: 20
+        maxTotal: 50
+      host: 113.31.105.128
+      port: 6379
+    # 长时远程緩存，主要用于要求时效要求一般的集中式缓存
+    longTime:
+      type: redis
+      expireAfterWriteInMillis: 7200000
+      keyConvertor: fastjson
+      valueEncoder: kryo
+      valueDecoder: kryo
+      poolConfig:
+        minIdle: 5
+        maxIdle: 20
+        maxTotal: 50
+      host: 113.31.105.128
+      port: 6379
+    # 短時远程緩存，主要用于要求时效较高的集中式缓存
+    shortTime:
+      type: redis
+      expireAfterWriteInMillis: 300000
+      keyConvertor: fastjson
+      valueEncoder: kryo
+      valueDecoder: kryo
+      poolConfig:
+        minIdle: 5
+        maxIdle: 20
+        maxTotal: 50
+      host: 113.31.105.128
+      port: 6379
+
+edu:
+  swagger:
+    # 是否启用
+    enable: true
+    base:
+      # 扫描的包，多个包使用逗号隔开
+      package: com.lagou.edu
+    contact:
+      email: leo@lagou.com
+      name: leo
+      url: http://eduboss.lagou.com
+    description:
+    title: edu-boss-boot API Documents
+    url: http://eduboss.lagou.com
+    version: 0.0.1
+    groupName: edu-boss-boot
+    # 自定义参数配置，可配置N个
+    parameter-config:
+      - name: Authorization
+        description: 公共参数, access_token
+        # header, cookie, body, query
+        type: header
+        data-type: String
+        required: false
+        # 测试接口时，自动填充token的值
+        default-value: "access_token"
+
+# knife4j配置
+knife4j:
+  enable: ${edu.swagger.enable}
+  basic:
+    enable: false
+    username: admin
+    password: admin
+
+rocketmq:
+  name-server: 127.0.0.1:9876
+  producer:
+    group: edu_group
+  consumer:
+    group: edu_group
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    #启用shutdown端点，以便支持优雅停机
+    shutdown:
+      enabled: true
+
+#分布式链路追踪--调整SpringBoot日志输出级别
+logging:
+  config: classpath:logback.xml
+
+feign:
+  sentinel:
+    enabled: true
+  okhttp:
+    enabled: true
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
